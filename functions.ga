@@ -1,0 +1,12 @@
+function setupImages(num)
+	for i=0,num-1 do
+		images[i] = ofImage()
+	end
+end
+
+function loadImageLibrary(num)
+	for i=0,num-1 do
+		file = gaDataPath(string.format("images/export%i.png",i))
+		images[i]:loadImage(file)
+	end
+end

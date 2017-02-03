@@ -1,0 +1,165 @@
+/*
+
+	"Magic Time Machine aka Neo-Suprematist Machine"
+	Alexis Leandro Estrella / Ji Yeon Kim / Laura Martorana
+	[Interactive and Electronic Media / Mª José Martínez de Pisón Ramón / http://mie.pluton.cc/]
+
+*/
+
+// imgs variables
+images = {}		// img table declaration
+currentImage = 0	// current img
+numImages = 30	// max num of img
+
+// video capture
+grabber = ofVideoGrabber()
+cam = ofTexture()
+previewOpacity = 0
+
+// output img size
+captureW = OUTPUT_W
+captureH = OUTPUT_H
+
+// switchs
+preview = false		// info + webcam
+presencia = false		// presence
+grabar = false		// recording
+
+// time variables
+wait = 250			// wait between shots
+
+// font variablesfnt = ofTrueTypeFont()
+fntSize = 14
+fntR = 255
+fntG = 0
+fntOpacity = 0
+
+// sound variables
+volume = 0.0
+
+function setup()
+
+	grabber:setDeviceID(1)						// input video declaration
+	grabber:initGrabber(captureW, captureH)		// start video capture
+	cam:allocate(captureW, captureH, GL_RGB)		// draw video capture (only in preview)
+	cam:clear()
+	
+	// draw saved img
+	setupImages(numImages)
+    	loadImageLibrary(numImages)
+
+end
+    
+function update()
+	
+	// update audio capture
+	volume = gaGetVolume(0)
+	
+	// update video capture
+	grabber:update()
+	if grabber:isFrameNew() then
+		cam = grabber:getTextureReference()
+    	end
+    	
+    	// loud sound starts recording
+    	if volume > 0.9 and grabar == false then
+		presencia = true
+    		grabar = true
+	end
+    	
+    	// if clap or loud sound start recording and playing
+    	if presencia then
+    		previewOpacity = 0
+    		if grabar and ofGetElapsedTimeMillis() > wait then
+			_path = gaDataPath(string.format("images/export%i.png", currentImage))
+			gaSaveFrame(_path, grabber:getTextureReference())
+		
+			if currentImage < numImages-1 then
+			 	currentImage += 1
+			else
+				currentImage = 0		 		 
+			end
+		
+			loadImageLibrary(numImages)
+			ofResetElapsedTimeCounter()
+		end
+    	end
+    	
+    	// stop playing on last img
+	if currentImage >= numImages-1 then
+		presencia = false
+		grabar = false
+		currentImage = 0
+	end
+	
+end
+
+function draw()
+	gaBackground(0.0, 1.0)
+	
+	/* captured imgs */
+	ofSetColor(255, 120)
+   	images[currentImage]:draw(0, 0, captureW, captureH)
+   	
+   	/* webcam */
+	ofSetColor(255, previewOpacity)
+	cam:draw(0, 0, OUTPUT_W, OUTPUT_H)
+	
+	/* text */
+	if presencia == false then
+		previewOpacity = 0
+    		ofSetColor(255)
+		fnt:loadFont(gaImportFile("DINBlackAlternate.ttf"), 50, false, false)
+		fnt:drawString(string.format("CLAP TO START"), 130, OUTPUT_H/2-30)
+		fnt:drawString(string.format("take your time"), 160, OUTPUT_H/2+100)
+    	end
+    	
+	/* info */
+	ofSetColor(255, fntOpacity)
+	fnt:loadFont(gaImportFile("DINBlackAlternate.ttf"), fntSize, false, false)
+	
+	fnt:drawString(string.format("PREVIEW", preview), 10, OUTPUT_H-168)
+	fnt:drawString(string.format("[p]", preview), fntSize*10, OUTPUT_H-168)
+	
+	fnt:drawString(string.format("VOLUME", volume), 10, OUTPUT_H-146)
+	fnt:drawString(string.format("%f", volume), fntSize*10, OUTPUT_H-146)
+	
+	fnt:drawString(string.format("PRESENCE", presencia), 10, OUTPUT_H-124)
+	fnt:drawString(tostring(presencia), fntSize*10, OUTPUT_H-124)
+	
+	fnt:drawString(string.format("RECORDING", grabar), 10, OUTPUT_H-102)
+	fnt:drawString(tostring(grabar), fntSize*10, OUTPUT_H-102)
+	
+	fnt:drawString(string.format("WAIT", wait), 10, OUTPUT_H-80)
+	fnt:drawString(string.format("%i ms", wait), fntSize*10, OUTPUT_H-80)
+	
+	fnt:drawString(string.format("IMAGE", numImages), 10, OUTPUT_H-58)
+	fnt:drawString(string.format("%i", currentImage+1), fntSize*10, OUTPUT_H-58)
+	fnt:drawString(string.format("/%i", numImages), fntSize*12, OUTPUT_H-58)
+	
+end
+
+function keyReleased()
+
+	if grabar then					// play loop
+		setupImages(numImages)
+		loadImageLibrary(numImages)
+		currentImage = 0
+	elseif grabar == false then			// stop loop and back to first img
+		currentImage = 0
+	end
+	
+	/* preview info and webcam */
+	if gaKey() == string.byte('p') and preview then
+		previewOpacity = 0
+		fntOpacity = 0
+		preview = false
+		gaLog(string.format("preview off"))
+	elseif gaKey() == string.byte('p') and preview == false then
+		previewOpacity = 0
+		fntOpacity = 255
+		preview = true
+		gaLog(string.format("preview on"))
+	end
+
+end
