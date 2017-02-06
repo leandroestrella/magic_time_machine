@@ -14,4 +14,4 @@ Hardware:
 - Projector
 
 Documentation:
-- Video: https://vimeo.com/202730312
+- Video: https://vimeo.com/202730312 / https://youtu.be/MEM3gcoKbx8
